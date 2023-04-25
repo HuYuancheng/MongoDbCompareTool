@@ -1,0 +1,11 @@
+{
+  "compare_dbs": ["haru_game_db"],
+  "compare_colls": ["player_data"],
+  "src_url": "",
+  "dst_url": "",
+  "sample_file_name": "sample_list.txt",
+  "query_batch": 20,
+  "sample_start_idx": 0,
+  "sample_count": 5000,
+  "task_count": 3
+}
