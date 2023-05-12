@@ -166,7 +166,7 @@ class AsyncDbCompare:
                 try:
                     doc = await src_cursor.next()
                 except Exception as e:
-                    self.log_error("src next failed! values: {}".format(values))
+                    self.log_error("src next failed! values: {}, msg: {}".format(values, str(e)))
                     continue
                 await asyncio.sleep(0)
                 md5 = hashlib.md5(str(doc).replace(': ', ':').replace(', ', ',').encode('utf - 8')).hexdigest()
@@ -192,7 +192,7 @@ class AsyncDbCompare:
                 try:
                     dst = await dst_cursor.next()
                 except Exception as e:
-                    self.log_error("dst next failed!")
+                    self.log_error("dst next failed! values: {}, msg: {}".format(values, str(e)))
                     continue
                 await asyncio.sleep(0)
                 md5 = hashlib.md5(str(dst).replace(': ', ':').replace(', ', ',').encode('utf - 8')).hexdigest()
@@ -215,11 +215,13 @@ class AsyncDbCompare:
 
         if not src_docs or not dst_docs:
             self.process_document_res = False
+            self.log_error("ERROR => src docs or dst docs is empty, src docs: {}, dst docs: {}".format(len(src_docs), len(dst_docs)))
             return False
 
         if len(src_docs) != len(dst_docs):
-            miss_ids = [i for i in list(src_docs.keys()) if i not in list(dst_docs.keys())]
-            self.log_error("DIFF => src docs count: {} != dst docs count: {}, missing ids: {}".format(len(src_docs), len(dst_docs), miss_ids))
+            dst_miss_ids = [i for i in list(src_docs.keys()) if i not in list(dst_docs.keys())]
+            src_miss_ids = [i for i in list(dst_docs.keys()) if i not in list(src_docs.keys())]
+            self.log_error("DIFF => src docs count: {} != dst docs count: {}, dst missing ids: {}, src missing ids".format(len(src_docs), len(dst_docs), dst_miss_ids, src_miss_ids))
 
         for id, doc in src_docs.items():
             migrated = dst_docs.get(id, None)
@@ -702,7 +704,7 @@ if __name__ == '__main__':
     sample_count = -1
     batch = -1
     task_count = -1
-    mode = -1
+    mode = 1
     period = -1
     for key, value in opts:
         if key in ("-h", "--help"):
@@ -751,16 +753,14 @@ if __name__ == '__main__':
             sample_list.append(line)
 
     configure["sample_list"] = sample_list
-    if len(sample_list) == 0:
-        exit(-1)
-
-    if mode == 1:
-        # 同步对比
-        asyncio.run(compare(configure))
-    elif mode == 2:
-        if period == 1:
-            # 写入文件
-            asyncio.run(write(configure))
-        elif period == 2:
-            # 加载文件对比
-            asyncio.run(load_and_compare(configure))
+    if len(sample_list) != 0:
+        if mode == 1:
+            # 同步对比
+            asyncio.run(compare(configure))
+        elif mode == 2:
+            if period == 1:
+                # 写入文件
+                asyncio.run(write(configure))
+            elif period == 2:
+                # 加载文件对比
+                asyncio.run(load_and_compare(configure))
